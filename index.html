@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>IA Lakay 🇭🇹</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&family=Noto+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --navy-deep:#001A40;--navy:#002366;--navy-light:#003A8C;
+  --red:#D21034;--red-glow:rgba(210,16,52,0.4);
+  --gold:#FFD700;--gold-glow:rgba(255,215,0,0.3);
+  --glass:rgba(255,255,255,0.06);--glass-border:rgba(255,255,255,0.12);
+  --text-primary:#FFFFFF;--text-secondary:rgba(255,255,255,0.6);--text-muted:rgba(255,255,255,0.35);
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Noto Sans',sans-serif;background:var(--navy-deep);color:var(--text-primary);-webkit-font-smoothing:antialiased;}
+
+.app-shell{
+  max-width:430px;margin:0 auto;height:100vh;position:relative;
+  background:linear-gradient(160deg,#001A40 0%,#000D24 50%,#1a0010 100%);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+
+/* Orbs */
+.orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;}
+.orb-blue{width:300px;height:300px;background:rgba(0,35,102,0.5);top:-100px;left:-100px;}
+.orb-red{width:200px;height:200px;background:rgba(210,16,52,0.25);bottom:200px;right:-50px;}
+.orb-gold{width:150px;height:150px;background:rgba(255,215,0,0.08);top:40%;left:30%;}
+.grid-overlay{position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,100,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,100,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px;}
+
+/* SCREENS */
+.screen{position:relative;z-index:1;flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;}
+.screen.active{display:flex;}
+.screen::-webkit-scrollbar{display:none;}
+
+/* GLASS */
+.glass-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:all .3s ease;}
+.glass-card:hover{border-color:rgba(255,255,255,0.2);transform:translateY(-2px);}
+
+/* BUTTONS */
+.btn-primary{background:linear-gradient(135deg,var(--red) 0%,#FF3366 100%);color:#fff;border:none;
+  border-radius:16px;font-family:'Exo 2',sans-serif;font-weight:700;font-size:16px;padding:16px 32px;
+  cursor:pointer;width:100%;box-shadow:0 8px 32px var(--red-glow);transition:all .3s ease;letter-spacing:.5px;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px var(--red-glow);}
+.btn-primary:active{transform:translateY(0);}
+
+.btn-ghost{background:var(--glass);border:1px solid var(--glass-border);color:#fff;border-radius:16px;
+  font-family:'Exo 2',sans-serif;font-weight:600;font-size:15px;padding:14px 28px;cursor:pointer;
+  width:100%;transition:all .3s ease;backdrop-filter:blur(10px);}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);}
+
+.btn-gold{background:linear-gradient(135deg,var(--gold) 0%,#FFA000 100%);color:#001A40;border:none;
+  border-radius:16px;font-family:'Exo 2',sans-serif;font-weight:800;font-size:16px;padding:16px 32px;
+  cursor:pointer;width:100%;box-shadow:0 8px 32px var(--gold-glow);transition:all .3s ease;}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,215,0,0.5);}
+
+/* TYPOGRAPHY */
+.font-display{font-family:'Exo 2',sans-serif;}
+.text-gradient-red{background:linear-gradient(135deg,#FF3366,var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.text-gradient-gold{background:linear-gradient(135deg,var(--gold),#FFA000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.text-gradient-blue{background:linear-gradient(135deg,#4DB8FF,#0066FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+/* ANIMATIONS */
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 80px rgba(0,60,200,0.3);}50%{box-shadow:0 0 120px rgba(0,60,200,0.5),0 0 60px rgba(210,16,52,0.2);}}
+@keyframes expand-ring{0%,100%{opacity:.5;transform:scale(1);}50%{opacity:1;transform:scale(1.05);}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+@keyframes glow-pulse{0%,100%{box-shadow:0 0 20px rgba(210,16,52,0.3);}50%{box-shadow:0 0 40px rgba(210,16,52,0.6);}}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.anim-float{animation:float 4s ease-in-out infinite;}
+.anim-fade-up{animation:fadeInUp .5s ease forwards;}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:relative;z-index:100;flex-shrink:0;
+  background:rgba(0,10,30,0.92);border-top:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(30px);display:flex;align-items:center;
+  padding:10px 8px 18px;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+  padding:8px 14px;border-radius:16px;transition:all .3s ease;flex:1;}
+.nav-item.active{background:rgba(210,16,52,0.15);}
+.nav-icon{font-size:22px;transition:transform .3s ease;}
+.nav-item.active .nav-icon{transform:scale(1.15);}
+.nav-label{font-size:10px;font-family:'Exo 2',sans-serif;font-weight:600;color:var(--text-muted);letter-spacing:.3px;}
+.nav-item.active .nav-label{color:var(--red);}
+
+/* ── ONBOARDING ── */
+#screen-onboard{justify-content:space-between;}
+.onboard-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px 20px;}
+.onboard-graphic{width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,rgba(0,100,255,0.4),rgba(210,16,52,0.2));
+  border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;
+  font-size:76px;margin-bottom:32px;box-shadow:0 0 80px rgba(0,60,200,0.3),0 0 40px rgba(210,16,52,0.15);
+  position:relative;animation:pulse-ring 3s ease-in-out infinite;}
+.ring-1,.ring-2{position:absolute;border-radius:50%;border:1px solid;animation:expand-ring 3s ease-in-out infinite;}
+.ring-1{width:240px;height:240px;border-color:rgba(0,100,255,0.2);}
+.ring-2{width:280px;height:280px;border-color:rgba(210,16,52,0.1);animation-delay:.5s;}
+.onboard-title{font-family:'Exo 2',sans-serif;font-size:30px;font-weight:900;line-height:1.25;text-align:center;margin-bottom:14px;white-space:pre-line;}
+.onboard-sub{font-size:15px;color:rgba(255,255,255,0.65);line-height:1.7;text-align:center;max-width:300px;}
+.onboard-dots{display:flex;gap:8px;margin-top:28px;}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all .3s ease;}
+.dot.active{width:24px;border-radius:4px;background:var(--red);}
+.onboard-footer{padding:16px 28px 36px;display:flex;flex-direction:column;gap:12px;}
+
+/* ── HOME ── */
+.home-scroll{flex:1;overflow-y:auto;padding-bottom:8px;}
+.home-scroll::-webkit-scrollbar{display:none;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:52px 20px 8px;}
+.greeting-sub{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;font-family:'Exo 2',sans-serif;margin-bottom:2px;}
+.greeting-name{font-family:'Exo 2',sans-serif;font-size:26px;font-weight:800;}
+.top-btn{width:40px;height:40px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;position:relative;transition:all .3s;}
+.top-btn:hover{background:rgba(255,255,255,0.1);}
+.notif-dot{position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--navy-deep);}
+.xp-bar-wrap{margin:14px 20px 0;}
+.xp-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Exo 2',sans-serif;}
+.xp-track{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;}
+.xp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),#FF6B35);transition:width 1s ease;}
+.stats-row{display:flex;gap:10px;padding:18px 20px 0;}
+.stat-card{flex:1;padding:14px 10px;border-radius:18px;text-align:center;}
+.stat-number{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:900;}
+.stat-label{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.section-title{font-family:'Exo 2',sans-serif;font-size:17px;font-weight:700;margin-bottom:12px;padding:0 20px;}
+.tip-card{margin:18px 20px;padding:20px;border-radius:22px;
+  background:linear-gradient(135deg,rgba(210,16,52,0.2) 0%,rgba(0,35,102,0.3) 100%);
+  border:1px solid rgba(210,16,52,0.3);position:relative;overflow:hidden;}
+.tip-card::before{content:'';position:absolute;top:-50%;right:-30%;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(210,16,52,0.15),transparent);}
+.tip-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(210,16,52,0.3);border:1px solid rgba(210,16,52,0.5);
+  border-radius:20px;padding:4px 12px;font-size:11px;font-family:'Exo 2',sans-serif;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:#FF6B8A;margin-bottom:10px;}
+.tip-text{font-size:14px;line-height:1.7;color:rgba(255,255,255,0.9);}
+.tip-sub{font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px;font-style:italic;}
+.chip-scroll{display:flex;gap:10px;padding:0 20px 4px;overflow-x:auto;}
+.chip-scroll::-webkit-scrollbar{display:none;}
+.chip{padding:8px 18px;border-radius:20px;font-size:13px;font-family:'Exo 2',sans-serif;font-weight:600;
+  white-space:nowrap;cursor:pointer;transition:all .3s ease;border:1px solid var(--glass-border);
+  background:var(--glass);flex-shrink:0;}
+.chip.active{background:linear-gradient(135deg,var(--red),#FF3366);border-color:transparent;box-shadow:0 4px 16px var(--red-glow);}
+.articles-list{padding:0 20px;display:flex;flex-direction:column;gap:12px;}
+.article-card{padding:16px;border-radius:20px;cursor:pointer;animation:fadeInUp .5s ease forwards;}
+.article-inner{display:flex;align-items:flex-start;gap:12px;}
+.article-icon-box{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.article-cat{font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;}
+.article-title{font-family:'Exo 2',sans-serif;font-size:15px;font-weight:700;line-height:1.4;margin-bottom:6px;}
+.article-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;}
+.article-tag{padding:3px 10px;background:rgba(255,255,255,0.06);border-radius:8px;font-family:'Exo 2',sans-serif;}
+.article-premium{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+  background:rgba(255,215,0,0.15);border-radius:8px;font-size:11px;font-family:'Exo 2',sans-serif;font-weight:700;color:var(--gold);}
+
+/* ── CHAT ── */
+#screen-chat{flex-direction:column;}
+.chat-header{flex-shrink:0;padding:52px 20px 12px;border-bottom:1px solid var(--glass-border);
+  background:rgba(0,10,30,0.7);backdrop-filter:blur(20px);}
+.chat-header-inner{display:flex;align-items:center;gap:12px;}
+.chat-avatar{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--navy-light),var(--red));
+  display:flex;align-items:center;justify-content:center;font-size:20px;}
+.chat-status{display:flex;align-items:center;gap:6px;margin-top:2px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#34D399;animation:glow-pulse 2s ease infinite;}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.chat-msgs::-webkit-scrollbar{display:none;}
+.msg-wrap{display:flex;gap:10px;animation:fadeInUp .3s ease;}
+.msg-wrap.user{flex-direction:row-reverse;}
+.msg-av{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.msg-av.ai{background:linear-gradient(135deg,var(--navy-light),var(--red));}
+.msg-av.user{background:linear-gradient(135deg,#333,#555);}
+.msg-bubble{max-width:72%;padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.6;white-space:pre-wrap;}
+.msg-bubble.ai{background:rgba(0,35,102,0.5);border:1px solid rgba(0,100,255,0.2);border-radius:18px 18px 18px 4px;}
+.msg-bubble.user{background:linear-gradient(135deg,var(--red),#FF3366);border-radius:18px 18px 4px 18px;}
+.typing-dots{display:flex;gap:4px;align-items:center;padding:4px 0;}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.4);animation:blink 1.4s ease infinite;}
+.typing-dots span:nth-child(2){animation-delay:.2s;}
+.typing-dots span:nth-child(3){animation-delay:.4s;}
+.chat-footer{flex-shrink:0;padding:10px 16px 20px;background:rgba(0,10,30,0.85);
+  border-top:1px solid var(--glass-border);backdrop-filter:blur(20px);}
+.quick-chips{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;}
+.quick-chips::-webkit-scrollbar{display:none;}
+.quick-chip{padding:6px 12px;background:var(--glass);border:1px solid var(--glass-border);
+  border-radius:10px;font-size:11px;cursor:pointer;font-family:'Exo 2',sans-serif;white-space:nowrap;
+  color:rgba(255,255,255,0.6);transition:all .3s;flex-shrink:0;}
+.quick-chip:hover{background:rgba(255,255,255,0.1);}
+.chat-input-row{display:flex;gap:10px;align-items:flex-end;}
+.chat-input{flex:1;background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;
+  padding:13px 16px;color:#fff;font-size:15px;font-family:'Noto Sans',sans-serif;resize:none;outline:none;
+  max-height:100px;transition:border-color .3s;}
+.chat-input:focus{border-color:rgba(210,16,52,0.5);}
+.chat-input::placeholder{color:var(--text-muted);}
+.chat-send{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--red),#FF3366);
+  border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px var(--red-glow);transition:all .3s;flex-shrink:0;}
+.chat-send:hover{transform:scale(1.05);}
+
+/* ── PREMIUM ── */
+.premium-scroll{flex:1;overflow-y:auto;padding-bottom:8px;}
+.premium-scroll::-webkit-scrollbar{display:none;}
+.premium-hero{text-align:center;padding:52px 24px 20px;}
+.crown-wrap{width:90px;height:90px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,160,0,0.1));
+  border:2px solid rgba(255,215,0,0.3);display:flex;align-items:center;justify-content:center;
+  font-size:44px;margin:0 auto 18px;box-shadow:0 0 60px rgba(255,215,0,0.2);animation:float 3s ease-in-out infinite;}
+.plan-toggle{display:flex;margin:0 20px 18px;background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;padding:4px;}
+.plan-tab{flex:1;padding:10px;border-radius:12px;text-align:center;cursor:pointer;transition:all .3s ease;font-family:'Exo 2',sans-serif;font-weight:700;font-size:14px;}
+.plan-tab.active{background:linear-gradient(135deg,var(--red),#FF3366);box-shadow:0 4px 16px var(--red-glow);}
+.plan-tab-save{font-size:11px;font-family:'Exo 2',sans-serif;}
+.plan-card-wrap{margin:0 20px 14px;padding:22px;border-radius:22px;position:relative;}
+.plan-badge-rec{position:absolute;top:-10px;right:20px;background:linear-gradient(135deg,var(--gold),#FFA000);
+  color:#001A40;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;padding:4px 14px;border-radius:10px;letter-spacing:.5px;}
+.plan-price{font-family:'Exo 2',sans-serif;font-size:32px;font-weight:900;}
+.plan-period{font-size:14px;color:var(--text-secondary);font-family:'Exo 2',sans-serif;}
+.plan-feature{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text-secondary);margin-bottom:8px;}
+.review-card{margin:20px 20px 0;padding:20px;border-radius:20px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);}
+.review-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+
+/* ── PROFILE ── */
+.profile-scroll{flex:1;overflow-y:auto;padding-bottom:8px;}
+.profile-scroll::-webkit-scrollbar{display:none;}
+.profile-hero{padding:52px 20px 20px;text-align:center;}
+.profile-avatar-wrap{position:relative;display:inline-block;margin-bottom:12px;}
+.profile-avatar{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--navy-light),var(--red));
+  border:3px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:40px;
+  box-shadow:0 8px 32px rgba(0,35,102,0.5);}
+.avatar-edit{position:absolute;bottom:2px;right:-2px;width:26px;height:26px;border-radius:50%;background:var(--red);
+  border:2px solid var(--navy-deep);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;}
+.profile-name{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px;}
+.profile-email{color:var(--text-secondary);font-size:14px;margin-bottom:12px;}
+.profile-level{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,160,0,0.1));
+  border:1px solid rgba(255,215,0,0.3);border-radius:20px;padding:5px 14px;font-size:13px;font-family:'Exo 2',sans-serif;font-weight:700;color:var(--gold);}
+.premium-badge{margin-top:14px;padding:12px 20px;background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,160,0,0.05));
+  border:1px solid rgba(255,215,0,0.2);border-radius:14px;display:flex;align-items:center;gap:10px;}
+.achievements-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 20px;margin-bottom:16px;}
+.achievement{padding:14px 10px;border-radius:16px;text-align:center;}
+.achieve-icon{font-size:28px;margin-bottom:6px;}
+.achieve-label{font-size:11px;color:var(--text-muted);font-family:'Exo 2',sans-serif;}
+.divider{height:1px;background:var(--glass-border);margin:14px 20px;}
+.settings-list{padding:0 20px;display:flex;flex-direction:column;gap:8px;}
+.setting-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;cursor:pointer;transition:all .3s;}
+.setting-row:hover{background:rgba(255,255,255,0.05);}
+.setting-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.setting-label{font-family:'Exo 2',sans-serif;font-size:15px;font-weight:600;flex:1;}
+.setting-arrow{color:var(--text-muted);font-size:18px;}
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);
+  position:relative;cursor:pointer;transition:all .3s;flex-shrink:0;}
+.toggle.on{background:var(--red);border-color:var(--red);}
+.toggle-thumb{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform .3s;}
+.toggle.on .toggle-thumb{transform:translateX(20px);}
+.footer-note{text-align:center;font-size:12px;color:var(--text-muted);padding:16px 0 8px;}
+</style>
+</head>
+<body>
+
+<div class="app-shell" id="app">
+  <div class="orb orb-blue"></div>
+  <div class="orb orb-red"></div>
+  <div class="orb orb-gold"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- ══════════════ ONBOARDING ══════════════ -->
+  <div class="screen active" id="screen-onboard">
+    <div class="onboard-hero">
+      <div class="onboard-graphic anim-float" id="onboard-graphic">
+        <div class="ring-1"></div>
+        <div class="ring-2"></div>
+        <span id="onboard-emoji" style="font-size:76px;">🇭🇹</span>
+      </div>
+      <h1 class="onboard-title font-display" id="onboard-title">Byenveni nan
+IA Lakay</h1>
+      <p class="onboard-sub" id="onboard-sub">Platfòm AI #1 pou Ayisyen yo. Aprann Entèlijans Atifisyèl nan lang ou a.</p>
+      <div class="onboard-dots">
+        <div class="dot active" id="dot-0"></div>
+        <div class="dot" id="dot-1"></div>
+        <div class="dot" id="dot-2"></div>
+      </div>
+    </div>
+    <div class="onboard-footer">
+      <button class="btn-primary" id="onboard-cta">Kòmanse Vwayaj Ou</button>
+      <button class="btn-ghost" id="onboard-skip" style="font-size:14px;padding:12px;color:rgba(255,255,255,0.4);">Pase</button>
+      <p style="text-align:center;font-size:12px;color:rgba(255,255,255,0.3);font-family:'Exo 2',sans-serif;margin-top:4px;">🇭🇹 Fèt ak ❤️ pou Ayiti</p>
+    </div>
+  </div>
+
+  <!-- ══════════════ HOME ══════════════ -->
+  <div class="screen" id="screen-home">
+    <div class="home-scroll">
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div>
+          <p class="greeting-sub">Bonjou 👋</p>
+          <h2 class="greeting-name">Jean-Baptiste <span>🇭🇹</span></h2>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div class="top-btn" onclick="showNav('profile')">🔔<div class="notif-dot"></div></div>
+          <div class="top-btn">🔍</div>
+        </div>
+      </div>
+
+      <!-- XP Bar -->
+      <div class="xp-bar-wrap">
+        <div class="xp-label"><span>⚡ 340 XP</span><span>Nivo 4 · Apranti AI</span></div>
+        <div class="xp-track"><div class="xp-fill" style="width:68%"></div></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="glass-card stat-card"><div class="stat-number text-gradient-red font-display">12</div><div class="stat-label">Leson</div></div>
+        <div class="glass-card stat-card"><div class="stat-number text-gradient-red font-display">5🔥</div><div class="stat-label">Jou d'afil</div></div>
+        <div class="glass-card stat-card"><div class="stat-number text-gradient-red font-display">3</div><div class="stat-label">Badges</div></div>
+      </div>
+
+      <!-- Daily Tip -->
+      <div class="tip-card" style="margin-top:18px;">
+        <div class="tip-badge">⚡ Konsèy Jou a</div>
+        <p class="tip-text">Itilize ChatGPT pou tradui dokiman ou an plizyè lang an yon sèl fwa!</p>
+        <p class="tip-sub">Utilisez ChatGPT pour traduire vos documents en plusieurs langues à la fois!</p>
+      </div>
+
+      <!-- Categories -->
+      <div style="height:18px;"></div>
+      <div class="chip-scroll" id="chip-scroll">
+        <div class="chip active" data-cat="Tout" onclick="filterArticles(this,'Tout')">Tout</div>
+        <div class="chip" data-cat="Debutan" onclick="filterArticles(this,'Debutan')">Debutan</div>
+        <div class="chip" data-cat="Biznis" onclick="filterArticles(this,'Biznis')">Biznis</div>
+        <div class="chip" data-cat="Edikasyon" onclick="filterArticles(this,'Edikasyon')">Edikasyon</div>
+        <div class="chip" data-cat="Imaj AI" onclick="filterArticles(this,'Imaj AI')">Imaj AI</div>
+        <div class="chip" data-cat="Avanse" onclick="filterArticles(this,'Avanse')">Avanse</div>
+      </div>
+
+      <div style="height:16px;"></div>
+      <p class="section-title font-display" id="article-count-label">Atik Popilè yo <span style="color:var(--text-muted);font-weight:400;font-size:14px;">(5)</span></p>
+      <div class="articles-list" id="articles-list"></div>
+      <div style="height:16px;"></div>
+    </div>
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav" id="nav-home">
+      <div class="nav-item active" onclick="showNav('home')"><span class="nav-icon">🏠</span><span class="nav-label">Akèy</span></div>
+      <div class="nav-item" onclick="showNav('chat')"><span class="nav-icon">🤖</span><span class="nav-label">AI Chat</span></div>
+      <div class="nav-item" onclick="showNav('premium')"><span class="nav-icon">👑</span><span class="nav-label">Premium</span></div>
+      <div class="nav-item" onclick="showNav('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profil</span></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════ CHAT ══════════════ -->
+  <div class="screen" id="screen-chat">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-inner">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <p class="font-display" style="font-weight:800;font-size:15px;">IA Lakay Assistant</p>
+          <div class="chat-status">
+            <div class="status-dot"></div>
+            <span style="font-size:12px;color:#34D399;font-family:'Exo 2',sans-serif;">Disponib 24/7</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <span style="font-size:18px;opacity:.6;cursor:pointer;" title="Kreyòl">🇭🇹</span>
+          <span style="font-size:18px;opacity:.6;cursor:pointer;" title="Français">🇫🇷</span>
+          <span style="font-size:18px;opacity:.6;cursor:pointer;" title="English">🇺🇸</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-msgs" id="chat-msgs"></div>
+
+    <!-- Footer -->
+    <div class="chat-footer">
+      <div class="quick-chips">
+        <div class="quick-chip" onclick="setInput('Kisa AI ye?')">Kisa AI ye?</div>
+        <div class="quick-chip" onclick="setInput('Esplike ChatGPT ban mwen')">Esplike ChatGPT</div>
+        <div class="quick-chip" onclick="setInput('Koman mwen ka fè bon prompt?')">Koman prompt?</div>
+        <div class="quick-chip" onclick="setInput('Ki diferans ant ChatGPT ak Claude?')">ChatGPT vs Claude</div>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" rows="1" placeholder="Ekri mesaj ou an Kreyòl, Fransè..."></textarea>
+        <button class="chat-send" id="chat-send-btn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="showNav('home')"><span class="nav-icon">🏠</span><span class="nav-label">Akèy</span></div>
+      <div class="nav-item active" onclick="showNav('chat')"><span class="nav-icon">🤖</span><span class="nav-label">AI Chat</span></div>
+      <div class="nav-item" onclick="showNav('premium')"><span class="nav-icon">👑</span><span class="nav-label">Premium</span></div>
+      <div class="nav-item" onclick="showNav('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profil</span></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════ PREMIUM ══════════════ -->
+  <div class="screen" id="screen-premium">
+    <div class="premium-scroll">
+      <div class="premium-hero">
+        <div class="crown-wrap">👑</div>
+        <p style="font-size:12px;color:var(--gold);font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">IA Lakay Premium</p>
+        <h2 class="font-display" style="font-size:28px;font-weight:900;line-height:1.25;margin-bottom:10px;">Debloke <span class="text-gradient-gold">Pouvwa Total</span><br>AI ou a</h2>
+        <p style="color:rgba(255,255,255,0.55);font-size:15px;line-height:1.6;">Aksè san limit ak tout resous AI yo. Vin yon ekspè vrè!</p>
+      </div>
+
+      <!-- Plan Toggle -->
+      <div class="plan-toggle">
+        <div class="plan-tab active" id="tab-monthly" onclick="selectPlan('monthly')">
+          <div>Mwa</div>
+        </div>
+        <div class="plan-tab" id="tab-yearly" onclick="selectPlan('yearly')">
+          <div>Ane</div>
+          <div class="plan-tab-save" style="color:var(--gold);">Ekonomize 33%</div>
+        </div>
+      </div>
+
+      <!-- Plan Card -->
+      <div id="plan-card-wrap"></div>
+
+      <div style="padding:0 20px;">
+        <button class="btn-gold">👑 Abòne Kounye a</button>
+        <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:10px;">Anile nenpòt ki lè · Sekirize pa Stripe 🔒</p>
+      </div>
+
+      <!-- Reviews -->
+      <div class="review-card">
+        <p class="font-display" style="font-weight:700;margin-bottom:12px;font-size:16px;">💬 Avis Manm yo</p>
+        <div>
+          <div class="review-row"><span class="font-display" style="font-weight:700;font-size:13px;">Marie C.</span><span style="color:#FFD700;font-size:12px;">★★★★★</span></div>
+          <p style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);">IA Lakay chanje lavi mwen! Mwen kounye a travay ak AI nan biznis mwen. 🚀</p>
+          <div class="review-row"><span class="font-display" style="font-weight:700;font-size:13px;">Pierre L.</span><span style="color:#FFD700;font-size:12px;">★★★★★</span></div>
+          <p style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.5;">Meilleure appli pour apprendre l'IA en créole. Merci!</p>
+        </div>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="showNav('home')"><span class="nav-icon">🏠</span><span class="nav-label">Akèy</span></div>
+      <div class="nav-item" onclick="showNav('chat')"><span class="nav-icon">🤖</span><span class="nav-label">AI Chat</span></div>
+      <div class="nav-item active" onclick="showNav('premium')"><span class="nav-icon">👑</span><span class="nav-label">Premium</span></div>
+      <div class="nav-item" onclick="showNav('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profil</span></div>
+    </nav>
+  </div>
+
+  <!-- ══════════════ PROFILE ══════════════ -->
+  <div class="screen" id="screen-profile">
+    <div class="profile-scroll">
+      <div class="profile-hero">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">👤</div>
+          <div class="avatar-edit">✏️</div>
+        </div>
+        <p class="profile-name">Jean-Baptiste D.</p>
+        <p class="profile-email">jbdupont@gmail.com</p>
+        <div class="profile-level">⭐ Nivo 4 · Apranti AI</div>
+        <div class="premium-badge">
+          <span style="font-size:20px;">👑</span>
+          <div style="flex:1;text-align:left;">
+            <p class="font-display" style="font-weight:700;font-size:13px;color:var(--gold);">Abòne Premium</p>
+            <p style="font-size:11px;color:rgba(255,255,255,0.5);">Aktif jiska 18 Jen 2026</p>
+          </div>
+          <span style="color:var(--gold);font-size:18px;">›</span>
+        </div>
+      </div>
+
+      <p class="section-title font-display">🏅 Reyalizasyon</p>
+      <div class="achievements-grid">
+        <div class="glass-card achievement"><div class="achieve-icon">🔥</div><div class="achieve-label">5 Jou</div></div>
+        <div class="glass-card achievement"><div class="achieve-icon">📚</div><div class="achieve-label">10 Atik</div></div>
+        <div class="glass-card achievement"><div class="achieve-icon">🤖</div><div class="achieve-label">AI Fan</div></div>
+        <div class="glass-card achievement"><div class="achieve-icon">🏆</div><div class="achieve-label">Top 10%</div></div>
+      </div>
+
+      <div style="padding:0 20px 14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <p style="font-family:'Exo 2',sans-serif;font-weight:600;font-size:13px;color:var(--text-secondary);">Pwogresyon Semèn sa</p>
+          <p style="font-family:'Exo 2',sans-serif;font-weight:700;font-size:13px;color:var(--red);">340 / 500 XP</p>
+        </div>
+        <div class="xp-track"><div class="xp-fill" style="width:68%"></div></div>
+      </div>
+
+      <div class="divider"></div>
+      <p class="section-title font-display">⚙️ Paramèt</p>
+      <div class="settings-list" id="settings-list"></div>
+
+      <p class="footer-note">IA Lakay v1.0 · Fèt ak ❤️ pou Ayiti 🇭🇹</p>
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="showNav('home')"><span class="nav-icon">🏠</span><span class="nav-label">Akèy</span></div>
+      <div class="nav-item" onclick="showNav('chat')"><span class="nav-icon">🤖</span><span class="nav-label">AI Chat</span></div>
+      <div class="nav-item" onclick="showNav('premium')"><span class="nav-icon">👑</span><span class="nav-label">Premium</span></div>
+      <div class="nav-item active" onclick="showNav('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profil</span></div>
+    </nav>
+  </div>
+
+</div><!-- /app-shell -->
+
+<script>
+/* ═══════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════ */
+const ARTICLES = [
+  {id:1,title:"Kisa AI ye? Konprann Entèlijans Atifisyèl",cat:"Debutan",catColor:"#4DB8FF",tag:"Kreyòl",time:"5 min",premium:false,emoji:"🧠"},
+  {id:2,title:"ChatGPT pou Biznis Ayisyen: Gid Konplè",cat:"Biznis",catColor:"#FF6B35",tag:"Fransè",time:"8 min",premium:true,emoji:"💼"},
+  {id:3,title:"Comment utiliser l'IA pour apprendre plus vite",cat:"Edikasyon",catColor:"#A78BFA",tag:"Français",time:"6 min",premium:false,emoji:"📚"},
+  {id:4,title:"Prompt Engineering: Teknik Avanse",cat:"Avanse",catColor:"#FFD700",tag:"Kreyòl",time:"10 min",premium:true,emoji:"⚡"},
+  {id:5,title:"AI Image Generation: Midjourney ak DALL-E",cat:"Imaj AI",catColor:"#34D399",tag:"English",time:"7 min",premium:false,emoji:"🎨"},
+];
+
+const PLANS = {
+  monthly:{price:"$4.99",period:"/mwa",features:["Atik Premium illimite","AI Assistant 100 mesaj/jou","Téléchajman Offline","Kurs eksklizif"]},
+  yearly:{price:"$39.99",period:"/an",badge:true,features:["Tout sa ki nan plan mwa","Mesaj AI san limit","Aksè Prioritè","Sètifika AI Ayisyen","Kontni eksklizif chak semèn"]},
+};
+
+const SETTINGS = [
+  {icon:"🌍",label:"Lang: Kreyòl",bg:"rgba(0,100,255,0.15)",type:"action",id:"lang-setting"},
+  {icon:"🔔",label:"Notifikasyon",bg:"rgba(210,16,52,0.15)",type:"toggle",state:true,id:"notif-toggle"},
+  {icon:"🌙",label:"Mòd Nwa",bg:"rgba(100,100,200,0.15)",type:"toggle",state:true,id:"dark-toggle"},
+  {icon:"📥",label:"Téléchajman Offline",bg:"rgba(52,211,153,0.15)",type:"arrow"},
+  {icon:"🔒",label:"Sekirite & Kont",bg:"rgba(255,215,0,0.15)",type:"arrow"},
+  {icon:"💬",label:"Èd ak Sipò",bg:"rgba(168,85,247,0.15)",type:"arrow"},
+  {icon:"🚪",label:"Dekonekte",bg:"rgba(210,16,52,0.15)",type:"arrow"},
+];
+
+const ONBOARD = [
+  {emoji:"🇭🇹",title:"Byenveni nan\nIA Lakay",sub:"Platfòm AI #1 pou Ayisyen yo. Aprann Entèlijans Atifisyèl nan lang ou a.",cta:"Kòmanse Vwayaj Ou"},
+  {emoji:"🤖",title:"AI Assistant\nPèsonèl Ou",sub:"Poze nenpòt kesyon an Kreyòl, Fransè oswa Anglè. AI pa nou toujou disponib.",cta:"Kontinye"},
+  {emoji:"🏆",title:"Aprann &\nGanye XP",sub:"Konplete leson, li atik, epi monte nivo ou. Vin yon ekspè AI Ayisyen!",cta:"Kòmanse Gratis"},
+];
+
+/* ═══════════════════════════════════════════════════
+   ONBOARDING
+═══════════════════════════════════════════════════ */
+let onboardSlide = 0;
+function updateOnboard(){
+  const s = ONBOARD[onboardSlide];
+  document.getElementById('onboard-emoji').textContent = s.emoji;
+  document.getElementById('onboard-title').textContent = s.title;
+  document.getElementById('onboard-sub').textContent = s.sub;
+  document.getElementById('onboard-cta').textContent = s.cta;
+  document.getElementById('onboard-skip').style.display = (onboardSlide === ONBOARD.length-1) ? 'none' : 'block';
+  for(let i=0;i<3;i++){
+    const d = document.getElementById('dot-'+i);
+    d.className = 'dot' + (i===onboardSlide?' active':'');
+  }
+}
+document.getElementById('onboard-cta').addEventListener('click',()=>{
+  if(onboardSlide < ONBOARD.length-1){ onboardSlide++; updateOnboard(); }
+  else { goToMain(); }
+});
+document.getElementById('onboard-skip').addEventListener('click',goToMain);
+function goToMain(){
+  document.getElementById('screen-onboard').classList.remove('active');
+  showNav('home');
+  renderArticles('Tout');
+  renderSettings();
+  renderPlanCard('yearly');
+  initChat();
+}
+
+/* ═══════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════ */
+const SCREENS = ['home','chat','premium','profile'];
+function showNav(tab){
+  SCREENS.forEach(s=>{
+    const el = document.getElementById('screen-'+s);
+    el.classList.toggle('active', s===tab);
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   ARTICLES
+═══════════════════════════════════════════════════ */
+let currentCat = 'Tout';
+function filterArticles(chipEl, cat){
+  currentCat = cat;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  chipEl.classList.add('active');
+  renderArticles(cat);
+}
+function renderArticles(cat){
+  const filtered = cat==='Tout' ? ARTICLES : ARTICLES.filter(a=>a.cat===cat);
+  const label = document.getElementById('article-count-label');
+  label.innerHTML = `Atik Popilè yo <span style="color:var(--text-muted);font-weight:400;font-size:14px;">(${filtered.length})</span>`;
+  const list = document.getElementById('articles-list');
+  list.innerHTML = filtered.map((a,i)=>`
+    <div class="glass-card article-card" style="animation-delay:${i*0.08}s;">
+      <div class="article-inner">
+        <div class="article-icon-box" style="background:${a.catColor}20;border:1px solid ${a.catColor}40;">${a.emoji}</div>
+        <div style="flex:1;">
+          <p class="article-cat" style="color:${a.catColor};">${a.cat}</p>
+          <p class="article-title">${a.title}</p>
+          <div class="article-meta">
+            <span class="article-tag">${a.tag}</span>
+            <span>⏱ ${a.time}</span>
+            ${a.premium?'<span class="article-premium">👑 Premium</span>':''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   PREMIUM
+═══════════════════════════════════════════════════ */
+let currentPlan = 'yearly';
+function selectPlan(p){
+  currentPlan = p;
+  document.getElementById('tab-monthly').classList.toggle('active', p==='monthly');
+  document.getElementById('tab-yearly').classList.toggle('active', p==='yearly');
+  document.getElementById('tab-monthly').style.color = p==='monthly'?'#fff':'var(--text-secondary)';
+  document.getElementById('tab-yearly').style.color = p==='yearly'?'#fff':'var(--text-secondary)';
+  const savEl = document.querySelector('#tab-yearly .plan-tab-save');
+  if(savEl) savEl.style.color = p==='yearly'?'rgba(255,255,255,0.8)':'var(--gold)';
+  renderPlanCard(p);
+}
+function renderPlanCard(p){
+  const plan = PLANS[p];
+  document.getElementById('plan-card-wrap').innerHTML = `
+    <div class="glass-card plan-card-wrap" style="border-color:rgba(255,215,0,0.3);">
+      ${p==='yearly'?'<div class="plan-badge-rec">⭐ REKÒMANDE</div>':''}
+      <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:16px;">
+        <span class="plan-price font-display text-gradient-gold">${plan.price}</span>
+        <span class="plan-period">${plan.period}</span>
+      </div>
+      ${plan.features.map(f=>`<div class="plan-feature"><span style="color:#34D399;font-size:16px;">✓</span>${f}</div>`).join('')}
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════════════ */
+const langs = ['Kreyòl','Français','English'];
+let langIdx = 0;
+const toggleStates = {notif:true, dark:true};
+function renderSettings(){
+  const list = document.getElementById('settings-list');
+  list.innerHTML = `
+    <div class="glass-card setting-row" onclick="cycleLang()">
+      <div class="setting-icon" style="background:rgba(0,100,255,0.15);">🌍</div>
+      <p class="setting-label" id="lang-label">Lang: Kreyòl</p>
+      <span class="setting-arrow">›</span>
+    </div>
+    <div class="glass-card setting-row">
+      <div class="setting-icon" style="background:rgba(210,16,52,0.15);">🔔</div>
+      <p class="setting-label">Notifikasyon</p>
+      <div class="toggle on" id="notif-toggle" onclick="flipToggle('notif')"><div class="toggle-thumb"></div></div>
+    </div>
+    <div class="glass-card setting-row">
+      <div class="setting-icon" style="background:rgba(100,100,200,0.15);">🌙</div>
+      <p class="setting-label">Mòd Nwa</p>
+      <div class="toggle on" id="dark-toggle" onclick="flipToggle('dark')"><div class="toggle-thumb"></div></div>
+    </div>
+    <div class="glass-card setting-row">
+      <div class="setting-icon" style="background:rgba(52,211,153,0.15);">📥</div>
+      <p class="setting-label">Téléchajman Offline</p>
+      <span class="setting-arrow">›</span>
+    </div>
+    <div class="glass-card setting-row">
+      <div class="setting-icon" style="background:rgba(255,215,0,0.15);">🔒</div>
+      <p class="setting-label">Sekirite & Kont</p>
+      <span class="setting-arrow">›</span>
+    </div>
+    <div class="glass-card setting-row">
+      <div class="setting-icon" style="background:rgba(168,85,247,0.15);">💬</div>
+      <p class="setting-label">Èd ak Sipò</p>
+      <span class="setting-arrow">›</span>
+    </div>
+    <div class="glass-card setting-row" onclick="alert('Dekonekte... Mèsi pou konfyans ou! 🇭🇹')">
+      <div class="setting-icon" style="background:rgba(210,16,52,0.15);">🚪</div>
+      <p class="setting-label" style="color:var(--red);">Dekonekte</p>
+      <span class="setting-arrow">›</span>
+    </div>
+  `;
+}
+function cycleLang(){
+  langIdx = (langIdx+1) % langs.length;
+  document.getElementById('lang-label').textContent = 'Lang: '+langs[langIdx];
+}
+function flipToggle(id){
+  toggleStates[id] = !toggleStates[id];
+  const el = document.getElementById(id+'-toggle');
+  el.classList.toggle('on', toggleStates[id]);
+}
+
+/* ═══════════════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════════════ */
+let chatHistory = [];
+function initChat(){
+  chatHistory = [];
+  addMessage('ai','Bonjou! Mwen se asistan AI ou nan IA Lakay. 🇭🇹\n\nKoman mwen ka ede ou jodi a? Ou ka ekri an Kreyòl, Fransè, oswa Anglè.');
+}
+
+function addMessage(role, text){
+  chatHistory.push({role, text});
+  const msgs = document.getElementById('chat-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap '+role;
+  wrap.innerHTML = `
+    <div class="msg-av ${role}">${role==='ai'?'🤖':'👤'}</div>
+    <div class="msg-bubble ${role}">${escHtml(text)}</div>
+  `;
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping(){
+  const msgs = document.getElementById('chat-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap ai';
+  wrap.id = 'typing-indicator';
+  wrap.innerHTML = `<div class="msg-av ai">🤖</div><div class="msg-bubble ai"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping(){
+  const t = document.getElementById('typing-indicator');
+  if(t) t.remove();
+}
+
+function setInput(text){
+  document.getElementById('chat-input').value = text;
+  document.getElementById('chat-input').focus();
+}
+
+async function sendMessage(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  addMessage('user', text);
+  showTyping();
+  document.getElementById('chat-send-btn').disabled = true;
+
+  try {
+    const systemPrompt = `Ou se asistan AI IA Lakay — yon platfòm aprantisaj AI pou Ayisyen yo. Repons ou yo dwe:
+1. Kòmanse an Kreyòl Ayisyen si itilizatè a ekri an Kreyòl, sinon repons nan lang yo itilize (Fransè/Anglè)
+2. Edikatif, klè, ak ankourajan
+3. Konsantre sou AI, teknoloji, ak aprantisaj
+4. Kout (2-4 paragraf maks) men konplè
+5. Ajoute yon ti motivasyon Ayisyen nan fen (opsyonèl)
+Ou se ekspè AI ki fèt pou ede Ayisyen konprann AI fasil.`;
+
+    const apiMessages = chatHistory
+      .filter(m => m.role !== 'typing')
+      .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: systemPrompt,
+        messages: apiMessages
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    const reply = data.content?.[0]?.text || 'Mwen pa ka repon kounye a. Eseye ankò!';
+    addMessage('ai', reply);
+  } catch(e) {
+    removeTyping();
+    addMessage('ai','Erè koneksyon. Tcheke entènèt ou epi eseye ankò. 🔌');
+  } finally {
+    document.getElementById('chat-send-btn').disabled = false;
+  }
+}
+
+// Auto-resize textarea
+document.getElementById('chat-input').addEventListener('input', function(){
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100)+'px';
+});
+document.getElementById('chat-input').addEventListener('keydown', function(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+
+function escHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+updateOnboard();
+</script>
+</body>
+</html>
